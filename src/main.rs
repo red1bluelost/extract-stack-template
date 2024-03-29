@@ -10,7 +10,9 @@ use parquet::{
     arrow::{
         AsyncArrowWriter, ParquetRecordBatchStreamBuilder, ProjectionMask,
     },
+    basic::Compression,
     errors::ParquetError,
+    file::properties::WriterProperties,
 };
 use regex::bytes::Regex;
 use tokio::{fs, sync::mpsc};
@@ -213,11 +215,14 @@ async fn main() -> anyhow::Result<()> {
     )]));
     let mut make_new_file = (0..100_000).map(|file_count| async move {
         let f = fs::File::create(format!("{:05}.parquet", file_count)).await?;
-        let w = AsyncArrowWriter::try_new(f, Arc::clone(schema), None)?;
+        let p = WriterProperties::builder()
+            .set_compression(Compression::SNAPPY)
+            .build();
+        let w = AsyncArrowWriter::try_new(f, Arc::clone(schema), Some(p))?;
         Ok::<_, anyhow::Error>(w)
     });
 
-    const ROW_MAX: usize = 0x8000;
+    const ROW_MAX: usize = 0x80000;
     let mut buffer = Vec::with_capacity(ROW_MAX);
     let mut file_writes = Vec::new();
     let bar = ProgressBar::new_spinner();
