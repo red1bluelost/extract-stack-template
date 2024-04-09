@@ -11,7 +11,6 @@ use parquet::{
         AsyncArrowWriter, ParquetRecordBatchStreamBuilder, ProjectionMask,
     },
     basic::Compression,
-    errors::ParquetError,
     file::properties::WriterProperties,
 };
 use regex::bytes::Regex;
@@ -24,12 +23,6 @@ lazy_static::lazy_static! {
     static ref TPL_REQUIRE: Regex = Regex::new(r"^template *<[^>]+>").unwrap();
     static ref TPL_REJECT: Regex =
         Regex::new(r"struct|class|using|[^:]:[^:]|^#include|;|~").unwrap();
-}
-
-fn into_parquet_error(
-    err: impl Into<Box<dyn std::error::Error + Send + Sync>>,
-) -> ParquetError {
-    ParquetError::External(err.into())
 }
 
 async fn filter_single_file(
@@ -54,7 +47,7 @@ async fn filter_single_file(
                     .as_any()
                     .downcast_ref::<StringArray>()
                     .ok_or_else(|| {
-                        into_parquet_error(anyhow::anyhow!(
+                        extract_template::into_parquet_error(anyhow::anyhow!(
                             "not a string array"
                         ))
                     })?;
@@ -63,7 +56,9 @@ async fn filter_single_file(
                     .flatten()
                     .filter(|s| TPL_FINDER.find(s.as_bytes()).is_some())
                 {
-                    tx.send(elm.into()).await.map_err(into_parquet_error)?;
+                    tx.send(elm.into())
+                        .await
+                        .map_err(extract_template::into_parquet_error)?;
                 }
                 Ok(())
             }

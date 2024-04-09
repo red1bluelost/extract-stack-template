@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0.81", features = ["backtrace"] }
+arrayvec = "0.7.4"
 arrow = "51.0.0"
 futures = "0.3.30"
 hf-hub = { version = "0.3.2", features = ["tokio"] }
@@ -14,7 +15,6 @@ memchr = "2.7.2"
 parquet = { version = "51.0.0", features = ["async"] }
 regex = "1.10.4"
 tokio = { version = "1.36.0", features = ["fs", "sync"] }
+tree-sitter = "0.22.2"
+tree-sitter-cpp = "0.21.0"
 unicode-ident = "1.0.12"
-
-[dev-dependencies]
-rand = "0.8.5"
